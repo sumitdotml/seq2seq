@@ -6,27 +6,54 @@ This is my attempt at recreating the seq2seq paper by Sutskever et al. I learned
 
 I'm translating German sentences to English using a sequence-to-sequence model. The idea is pretty simple - I have an encoder that reads German words and understands what they mean, then a decoder that spits out English words one by one. I trained it on the WMT19 dataset which has tons of German-English sentence pairs. Classic seq2seq stuff.
 
-## How I set this up
+## Quick Start
 
-I organized everything into logical pieces:
-
-- The neural network models live in `src/models/` (where I tried coding the architecture)
-- Data handling stuff is in `src/data/` (downloading and processing the data)
-- Training scripts are in `scripts/` (training the model, visualizing the training progress, etc.)
-- I save model checkpoints in `checkpoints/` (not pushed remotely since it's a lot of data, but this directory will be automatically created once you run the training script)
-- The visualizations will be saved in `training_plots/` (the plot automatically updates as the model trains)
-
-## Running this yourself
-
-First, install the dependencies:
+If you want to skip straight to testing translations, you can use my pre-trained model (well, it's not that great since it was trained on a subset of the WMT19 dataset, but it's a good starting point):
 
 ```bash
-pip install -e .
+# 1. Create and activate virtual environment
+# Option a: Using uv (recommended)
+uv venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 
-# or if you wanna just do uv
+# Option b: Using standard Python
+python -m venv .venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+
+# 2. Install dependencies
 uv pip install -r requirements.txt
+# Or use regular pip: pip install -r requirements.txt
 
-# if there are some installations missing despite this, just run `uv pip install {said  package}`
+# 3. Download pre-trained model (one-time setup)
+python scripts/download_pretrained.py
+
+# 4. Start translating!
+python scripts/inference.py --interactive
+```
+
+I trained the model on 2M sentence pairs, so expect some basic to slightly unexpected translations and some `<UNK>` tokens for words not in the 30k German / 25k English vocabularies.
+
+## Preparing and Training the Model
+
+First, set up your environment:
+
+```bash
+# 1. Create and activate virtual environment
+# Option a: Using uv (recommended)
+uv venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+
+# Option b: Using standard Python
+python -m venv .venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+
+# 2. Install dependencies
+uv pip install -r requirements.txt
+# Or use regular pip: pip install -r requirements.txt
+
+# Alternative: Install in editable mode
+uv pip install -e .
+# Or: pip install -e .
 ```
 
 Then run the data preparation to download and process the WMT19 dataset:
@@ -43,9 +70,14 @@ This takes a while because it downloads a big dataset and processes it. I filter
 python src/data/tokenization.py
 ```
 
-This step is crucial because the tokenizers build vocabularies based on the actual words in your training data. If you use a smaller dataset but keep tokenizers built for the full dataset, you'll have vocabulary mismatches. I learned this the hard way when my model kept seeing unknown tokens everywhere.
+This step is crucial because the tokenizers build vocabularies based on the actual words in your training data. If you use a smaller dataset but keep tokenizers built for the full dataset, you'll have vocabulary mismatches.
 
-Currently, the tokenization builds separate vocabularies for German (max 30k words) and English (max 25k words) from the actual training pairs. This is in relation to my dataset of size 2M (the original WMT19 dataset's size is 35M), and if you decide to either increase or decrease the size of your dataset in the `data_preparation.py` file, you might want to update these vocabulary sizes as well.
+Currently, the tokenization builds separate vocabularies for German (max 30k words) and English (max 25k words) from the actual training pairs, which is not a lot. This is in relation to my dataset of size 2M (the original WMT19 dataset's size is 35M).
+
+If you have compute that you can rely on, I recommend training on the full WMT19 dataset (35M sentence pairs). You can do this by:
+- setting `use_full_dataset=True` in [data_preparation.py](scripts/data_preparation.py#L133-134) to prepare the full WMT19 dataset (35M sentence pairs)
+- tweaking the hyperparameters in [train.py](scripts/train.py#L30-L39)
+- update the DE-EN vocabulary sizes in [tokenization.py](src/data/tokenization.py#L138-144)
 
 Once you confirm the tokenization is done, start training:
 
@@ -57,11 +89,28 @@ Training could take several hours depending on your hardware. I set it up to wor
 
 You can watch the training progress in real-time. I print out loss values and save plots showing how well it's learning. The model gets saved automatically when it improves.
 
-## Playing with it
+Once you are done training, run the demo:
 
-Once training is done, you can experiment with different sentences. The model is saved in the checkpoints directory. I included visualization tools that show how the loss decreases over time.
+```bash
+python scripts/inference.py
+```
 
-If you want to see what the model learned, check out the training plots it generates. You can watch the validation loss go down (hopefully) and see when the model starts overfitting.
+### Translating Your Own Sentences
+
+**Single sentence translation:**
+
+```bash
+python scripts/inference.py --sentence "Guten Morgen!" --verbose
+```
+
+The `--verbose` flag shows you the tokenization process and model's internal workings.
+
+**Interactive mode:**
+```bash
+python scripts/inference.py --interactive
+```
+
+This starts an interactive session where you can type German sentences and get English translations in real-time.
 
 ## Why I built this
 

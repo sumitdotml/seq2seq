@@ -1,4 +1,9 @@
+# Core dependencies for training and inference
 torch
 datasets
 matplotlib
 numpy
+
+# Additional dependencies for downloading models
+requests
+tqdm
