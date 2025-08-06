@@ -8,7 +8,7 @@ I'm translating German sentences to English using a sequence-to-sequence model. 
 
 ## Quick Start
 
-If you want to skip straight to testing translations, you can use my pre-trained model (well, it's not that great since it was trained on a subset of the WMT19 dataset, but it's a good starting point):
+If you want to skip straight to testing translations, you can use my [pre-trained model](https://huggingface.co/sumitdotml/seq2seq-de-en) (well, it's not that great since it was trained on a subset of the WMT19 dataset, but it's a good starting point):
 
 ```bash
 # 1. Create and activate virtual environment
